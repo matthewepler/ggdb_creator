@@ -62,7 +62,7 @@ function sendMail() {
 		from: 'ggdb.info@gmail.com',
 		to: email,
 		subject: 'Your GGDB contributor credentials',
-		text: `Thanks for being a contributor! You can now sign in with your email and this password: ${pswd}. You can now edit any entry in Season ${season}, Episode ${episode}. To get started go to http://gg-db.com/guide. Good luck and thanks for your help.` 
+		text: `Thanks for being a contributor! You can now sign in with your email and this password: ${pswd}. You can now edit any entry in Season ${season}, Episode ${episode}. To get started go to http://gg-db.com/guide. Good luck and thanks for your help. (Do not reply this email. It will not work. Contact info is in the guide at the link above)` 
 	};
 
 	transporter.sendMail(mailOptions, function(error, info) {
