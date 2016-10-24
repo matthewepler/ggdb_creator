@@ -13,8 +13,9 @@ firebase.initializeApp(config);
 
 
 const email = process.argv[2];
-const season = process.argv[3];
-const episode = process.argv[4];
+const name = process.argv[3]
+const season = process.argv[4];
+const episode = process.argv[5];
 
 // generate a password
 const pswd = randomWords(2).join('');
@@ -30,12 +31,30 @@ firebase.auth().createUserWithEmailAndPassword(email, pswd).then(function() {
 	}  
 });
 
+
+
 function updateUser() {
-	const user = firebase.auth().currentUser;
-	if (user) {
-		user.updateProfile({
-			season: season,
-			episode: episode		
+	// get user database
+	const user = firebase.database().ref('users/' + firebase.auth().currentUser.uid);
+	if (user) {	
+		let seasons, episodes = null;
+		if (user.seasons) {
+			seasons = user.seasons.val();	
+			seasons.push(season);
+		} else {
+			seasons = [season];
+		}
+
+		if (user.episodes) {
+			episodes = user.episodes.val();
+			episodes.push(episode);
+		} else {
+			episodes = [episode];
+		}
+
+		user.set({
+			seasons: seasons,
+			episodes: episodes	
 		}).then(function() {
 			console.log('user updated successfully');
 			sendMail();
