@@ -13,8 +13,9 @@ firebase.initializeApp(config);
 
 
 const email = process.argv[2];
-const season = process.argv[3];
-const episode = process.argv[4];
+const name = process.argv[3]
+const season = process.argv[4];
+const episode = process.argv[5];
 
 // generate a password
 const pswd = randomWords(2).join('');
@@ -34,6 +35,7 @@ function updateUser() {
 	const user = firebase.auth().currentUser;
 	if (user) {
 		user.updateProfile({
+			name: name,
 			season: season,
 			episode: episode		
 		}).then(function() {
@@ -62,7 +64,7 @@ function sendMail() {
 		from: 'ggdb.info@gmail.com',
 		to: email,
 		subject: 'Your GGDB contributor credentials',
-		text: `Thanks for being a contributor! You can now sign in with your email and this password: ${pswd}. You can now edit any entry in Season ${season}, Episode ${episode}. To get started go to http://gg-db.com/guide. Good luck and thanks for your help. (Do not reply this email. It will not work. Contact info is in the guide at the link above)` 
+		text: `Thanks for being a contributor! You can now sign in with your email and this password: ${pswd}. You can now add/edit any entry in Season ${season}, Episode ${episode}. To get started go to http://gg-db.com/guide. Good luck and thanks for your help. (Do not reply this email. It will not work. Contact info is in the guide at the link above)` 
 	};
 
 	transporter.sendMail(mailOptions, function(error, info) {
@@ -78,7 +80,7 @@ function sendMail() {
 
 
 function addToFile() {
-	const dataString = `${season},${episode},${email},${pswd}\n`;
+	const dataString = `${season},${episode},${name},${email},${pswd}\n`;
 	fs.appendFile('users.csv', dataString, 'utf8', (err) => {
 		if (err) {
 			console.log("Error writing to file. Add manually. Pswd = " + pswd);
