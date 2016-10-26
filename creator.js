@@ -33,22 +33,19 @@ firebase.auth().createUserWithEmailAndPassword(email, pswd).then(function() {
 
 function updateUser() {
 	const user = firebase.auth().currentUser;
-	if (user) {
-		user.updateProfile({
-			name: name,
-			season: season,
-			episode: episode		
-		}).then(function() {
+
+	firebase.database().ref('users/' + user.uid).set({
+    email: email,
+    name: name,
+    season : season,
+    episode: episode,
+  }).then(function() {
 			console.log('user updated successfully');
 			sendMail();
 		}, function() {
 			console.log('unable to update user');
 			process.exit(1);	
 		});
-	} else {
-		console.log('Could not get user profile.');
-		process.exit(1);
-	}
 }
 
 function sendMail() {
