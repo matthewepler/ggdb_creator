@@ -10,6 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "csv": "^1.1.0",
+    "fast-csv": "^2.3.0",
     "firebase": "^3.4.1",
     "nodemailer": "^2.6.4",
     "random-words": "0.0.1"
