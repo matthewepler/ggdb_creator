@@ -1,9 +1,9 @@
-// change this script
-
 const firebase = require('firebase');
 const randomWords = require('random-words');
 const nodemailer = require('nodemailer');
 const fs = require('fs');
+var csv = require("fast-csv");
+
 
 const config = {
 	    apiKey: "AIzaSyCRlBbgvXtULfnyfW0tzd-7AoSypxq9n0M",
@@ -14,46 +14,51 @@ const config = {
 firebase.initializeApp(config);
 
 
-const email = process.argv[2];
-const name = process.argv[3]
 
-const permString = process.argv[4].split('.');
-const season = permString[0];
-const episode = permString[1];
-
-// generate a password
-const pswd = randomWords(2).join('');
-
-// create a user
-firebase.auth().createUserWithEmailAndPassword(email, pswd).then(function() {
-	console.log('user created successfully');
-	updateUser();
-}, function(error) {
-	if (error) {
-		console.log(error.code, error.message);
-		process.exit(1);
-	}  
-});
+csv.fromPath(process.argv[2])
+	.on('data', function(data) {
+		console.log(data[0]);
+		const userObj = {};
+	})
+	.on('end', function() {
+		console.log('done');
+	})
 
 
+function createUser(userObj) {
+	// generate a password
+	userObj.pswd = randomWords(2).join('');
 
-function updateUser() {
+	// create a user
+	firebase.auth().createUserWithEmailAndPassword(userObj.email, userObj.pswd).then(function() {
+		console.log('user created successfully');
+		updateUser(userObj);
+	}, function(error) {
+		if (error) {
+			console.log(error.code, error.message);
+			process.exit(1);
+		}  
+	});
+}
+
+function updateUser(userObj) {
 	const user = firebase.auth().currentUser;
 
 	firebase.database().ref('users/' + user.uid).set({
-    	email: email,
-    	name: name,
-    	episodes: [episode],
-  	}).then(function() {
+    email: userObj.email,
+    name: userObj.name,
+    season : userObj.season,
+    episode: userObj.episode,
+  }).then(function() {
 			console.log('user updated successfully');
-			sendMail();
+			sendMail(userObj);
 		}, function() {
 			console.log('unable to update user');
 			process.exit(1);	
 		});
 }
 
-function sendMail() {
+function sendMail(userObj) {
 	const transporter = nodemailer.createTransport({
 		service: 'Gmail',
 		auth: {
@@ -64,9 +69,9 @@ function sendMail() {
 
 	const mailOptions = {
 		from: 'ggdb.info@gmail.com',
-		to: email,
+		to: userObj.email,
 		subject: 'Your GGDB contributor credentials',
-		text: `Thanks for being a contributor! You can now sign in with your email and this password: ${pswd}. You can now add/edit any entry in Season ${season}, Episode ${episode}. To get started go to http://gg-db.com/guide. Good luck and thanks for your help. (Do not reply this email. It will not work. Contact info is in the guide at the link above)` 
+		text: `Thanks for being a contributor! You can now sign in with your email and this password: ${userObj.pswd}. You can now add/edit any entry in Season ${userObj.season}, Episode ${userObj.episode}. To get started go to http://gg-db.com/guide. Good luck and thanks for your help. (Do not reply this email. It will not work. Contact info is in the guide at the link above)` 
 	};
 
 	transporter.sendMail(mailOptions, function(error, info) {
@@ -76,13 +81,13 @@ function sendMail() {
 		}
 		console.log('email sent.');
 		firebase.auth().signOut()
-		addToFile();
+		addToFile(userObj);
 	});
 }
 
 
-function addToFile() {
-	const dataString = `${season},${episode},${name},${email},${pswd}\n`;
+function addToFile(userObj) {
+	const dataString = `${userObj.season},${userObj.episode},${userObj.name},${userObj.email},${userObj.pswd}\n`;
 	fs.appendFile('users.csv', dataString, 'utf8', (err) => {
 		if (err) {
 			console.log("Error writing to file. Add manually. Pswd = " + pswd);
