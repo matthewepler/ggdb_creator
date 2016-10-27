@@ -1,5 +1,3 @@
-// change this script
-
 const firebase = require('firebase');
 const randomWords = require('random-words');
 const nodemailer = require('nodemailer');
@@ -25,17 +23,17 @@ const episode = permString[1];
 const pswd = randomWords(2).join('');
 
 // create a user
-firebase.auth().createUserWithEmailAndPassword(email, pswd).then(function() {
-	console.log('user created successfully');
-	updateUser();
-}, function(error) {
-	if (error) {
-		console.log(error.code, error.message);
-		process.exit(1);
-	}  
-});
-
-
+if (email && name && season && episode) {
+	firebase.auth().createUserWithEmailAndPassword(email, pswd).then(function() {
+		console.log('user created successfully');
+		updateUser();
+	}, function(error) {
+		if (error) {
+			console.log(error.code, error.message);
+			process.exit(1);
+		}  
+	});
+}
 
 function updateUser() {
 	const user = firebase.auth().currentUser;
@@ -66,13 +64,16 @@ function sendMail() {
 		from: 'ggdb.info@gmail.com',
 		to: email,
 		subject: 'Your GGDB contributor credentials',
-		text: `Thanks for being a contributor! You can now sign in with your email and this password: ${pswd}. You can now add/edit any entry in Season ${season}, Episode ${episode}. To get started go to http://gg-db.com/guide. Good luck and thanks for your help. (Do not reply this email. It will not work. Contact info is in the guide at the link above)` 
+		text: `Thanks for being a contributor! You can now sign in with your email and this password: ${pswd}. You can now add/edit any entry in Season ${season}, Episode ${episode}. To get started go to http://gg-db.com/guide. Good luck and thanks for your help!` 
 	};
 
 	transporter.sendMail(mailOptions, function(error, info) {
 		if (error) {
 			console.log("Error while sending email.", error);
 			// ** TO DO ** delete user and start over
+		}
+		if (info) {
+			console.log("info from sendMail: ", info);
 		}
 		console.log('email sent.');
 		firebase.auth().signOut()
