@@ -14,41 +14,58 @@ firebase.initializeApp(config);
 
 const email = process.argv[2];
 const name = process.argv[3]
-
-const permString = process.argv[4].split('.');
-const season = permString[0];
-const episode = permString[1];
+const season = process.argv[4];
+const episode = process.argv[5];
 
 // generate a password
 const pswd = randomWords(2).join('');
 
 // create a user
-if (email && name && season && episode) {
-	firebase.auth().createUserWithEmailAndPassword(email, pswd).then(function() {
-		console.log('user created successfully');
-		updateUser();
-	}, function(error) {
-		if (error) {
-			console.log(error.code, error.message);
-			process.exit(1);
-		}  
-	});
-}
+firebase.auth().createUserWithEmailAndPassword(email, pswd).then(function() {
+	console.log('user created successfully');
+	updateUser();
+}, function(error) {
+	if (error) {
+		console.log(error.code, error.message);
+		process.exit(1);
+	}  
+});
+
+
 
 function updateUser() {
-	const user = firebase.auth().currentUser;
+	// get user database
+	const user = firebase.database().ref('users/' + firebase.auth().currentUser.uid);
+	if (user) {	
+		let seasons, episodes = null;
+		if (user.seasons) {
+			seasons = user.seasons.val();	
+			seasons.push(season);
+		} else {
+			seasons = [season];
+		}
 
-	firebase.database().ref('users/' + user.uid).set({
-    	email: email,
-    	name: name,
-    	episodes: [episode],
-  	}).then(function() {
+		if (user.episodes) {
+			episodes = user.episodes.val();
+			episodes.push(episode);
+		} else {
+			episodes = [episode];
+		}
+
+		user.set({
+			seasons: seasons,
+			episodes: episodes	
+		}).then(function() {
 			console.log('user updated successfully');
 			sendMail();
 		}, function() {
 			console.log('unable to update user');
 			process.exit(1);	
 		});
+	} else {
+		console.log('Could not get user profile.');
+		process.exit(1);
+	}
 }
 
 function sendMail() {
@@ -64,16 +81,13 @@ function sendMail() {
 		from: 'ggdb.info@gmail.com',
 		to: email,
 		subject: 'Your GGDB contributor credentials',
-		text: `Thanks for being a contributor! You can now sign in with your email and this password: ${pswd}. You can now add/edit any entry in Season ${season}, Episode ${episode}. To get started go to http://gg-db.com/guide. Good luck and thanks for your help!` 
+		text: `Thanks for being a contributor! You can now sign in with your email and this password: ${pswd}. You can now edit any entry in Season ${season}, Episode ${episode}. To get started go to http://gg-db.com/guide. Good luck and thanks for your help. (Do not reply this email. It will not work. Contact info is in the guide at the link above)` 
 	};
 
 	transporter.sendMail(mailOptions, function(error, info) {
 		if (error) {
 			console.log("Error while sending email.", error);
 			// ** TO DO ** delete user and start over
-		}
-		if (info) {
-			console.log("info from sendMail: ", info);
 		}
 		console.log('email sent.');
 		firebase.auth().signOut()
@@ -83,7 +97,7 @@ function sendMail() {
 
 
 function addToFile() {
-	const dataString = `${season},${episode},${name},${email},${pswd}\n`;
+	const dataString = `${season},${episode},${email},${pswd}\n`;
 	fs.appendFile('users.csv', dataString, 'utf8', (err) => {
 		if (err) {
 			console.log("Error writing to file. Add manually. Pswd = " + pswd);
